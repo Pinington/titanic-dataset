@@ -315,7 +315,11 @@ class ID3(Model):
     def train(self, X, y):
         X = self._prepare_features(X)
 
-        self.tree = self._build_tree(X, y, depth=0)
+        self.tree = self._build_tree(
+            X,
+            y.reset_index(drop=True),
+            depth=0
+        )
 
 
     def predict(self, X):
@@ -328,20 +332,187 @@ class ID3(Model):
 
 
     def _entropy(self, y):
-        # TODO
-        pass
+        """
+        Calculate entropy:
+
+            H(Y) = -sum(p * log2(p))
+
+        where p is the proportion of each class.
+        """
+
+        if len(y) == 0:
+            return 0
+
+        probabilities = y.value_counts(normalize=True)
+
+        entropy = 0
+
+        for p in probabilities:
+            entropy -= p * np.log2(p)
+
+        return entropy
 
 
     def _information_gain(self, X, y, feature):
-        # TODO
-        pass
+        """
+        Information gain from splitting X on `feature`.
+
+        IG = H(parent) - weighted average H(children)
+        """
+
+        parent_entropy = self._entropy(y)
+
+        weighted_entropy = 0
+
+        for value in X[feature].unique():
+
+            mask = X[feature] == value
+
+            child_y = y[mask]
+
+            weight = len(child_y) / len(y)
+
+            weighted_entropy += (
+                weight * self._entropy(child_y)
+            )
+
+        return parent_entropy - weighted_entropy
 
 
     def _build_tree(self, X, y, depth):
-        # TODO
-        pass
+        """
+        Recursively build the ID3 tree.
+
+        A leaf is represented by:
+
+            {"leaf": prediction}
+
+        A decision node is represented by:
+
+            {
+                "feature": feature,
+                "branches": {
+                    value: subtree
+                }
+            }
+        """
+
+        # -------------------------
+        # Stopping conditions
+        # -------------------------
+
+        # Everyone has the same class
+        if len(y.unique()) == 1:
+            return {
+                "leaf": y.iloc[0]
+            }
+
+        # No features left
+        if len(X.columns) == 0:
+            return {
+                "leaf": y.mode()[0]
+            }
+
+        # Maximum depth reached
+        if depth >= self.MAX_DEPTH:
+            return {
+                "leaf": y.mode()[0]
+            }
+
+        # Too few samples
+        if len(y) < self.MIN_SAMPLES:
+            return {
+                "leaf": y.mode()[0]
+            }
+
+
+        # -------------------------
+        # Find best feature
+        # -------------------------
+
+        gains = {
+            feature: self._information_gain(
+                X,
+                y,
+                feature
+            )
+            for feature in X.columns
+        }
+
+        best_feature = max(
+            gains,
+            key=gains.get
+        )
+
+        # No useful split
+        if gains[best_feature] <= 0:
+            return {
+                "leaf": y.mode()[0]
+            }
+
+
+        # -------------------------
+        # Create decision node
+        # -------------------------
+
+        tree = {
+            "feature": best_feature,
+            "branches": {}
+        }
+
+
+        # -------------------------
+        # Recursively create branches
+        # -------------------------
+
+        for value in X[best_feature].unique():
+
+            mask = X[best_feature] == value
+
+            X_child = X.loc[mask].drop(
+                columns=[best_feature]
+            )
+
+            y_child = y.loc[mask]
+
+            tree["branches"][value] = self._build_tree(
+                X_child,
+                y_child,
+                depth + 1
+            )
+
+        return tree
 
 
     def _predict_row(self, row, tree):
-        # TODO
-        pass
+
+        # We reached a leaf
+        if "leaf" in tree:
+            return tree["leaf"]
+
+        feature = tree["feature"]
+
+        value = row[feature]
+
+        # If this value wasn't seen during training,
+        # use the majority class of the available branches.
+        if value not in tree["branches"]:
+            leaves = []
+
+            def collect_leaves(node):
+                if "leaf" in node:
+                    leaves.append(node["leaf"])
+                    return
+
+                for child in node["branches"].values():
+                    collect_leaves(child)
+
+            for child in tree["branches"].values():
+                collect_leaves(child)
+
+            return pd.Series(leaves).mode()[0]
+
+        return self._predict_row(
+            row,
+            tree["branches"][value]
+        )
