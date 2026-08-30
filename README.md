@@ -1,2 +1,4 @@
-# titanic-dataset
-Short exploration of the Titanic dataset, with the goal of learning more about Kaggle competitions
+# Titanic
+
+Kaggle competition's beginner friendly start. 
+I expect to make notebooks to detail the data exploration process
