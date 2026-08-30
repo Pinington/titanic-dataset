@@ -380,26 +380,14 @@ class ID3(Model):
 
 
     def _build_tree(self, X, y, depth):
-        """
-        Recursively build the ID3 tree.
 
-        A leaf is represented by:
+        X = X.reset_index(drop=True)
+        y = y.reset_index(drop=True)
 
-            {"leaf": prediction}
-
-        A decision node is represented by:
-
-            {
-                "feature": feature,
-                "branches": {
-                    value: subtree
-                }
+        if len(y) == 0:
+            return {
+                "leaf": 0
             }
-        """
-
-        # -------------------------
-        # Stopping conditions
-        # -------------------------
 
         # Everyone has the same class
         if len(y.unique()) == 1:
@@ -410,19 +398,19 @@ class ID3(Model):
         # No features left
         if len(X.columns) == 0:
             return {
-                "leaf": y.mode()[0]
+                "leaf": y.mode().iloc[0]
             }
 
         # Maximum depth reached
         if depth >= self.MAX_DEPTH:
             return {
-                "leaf": y.mode()[0]
+                "leaf": y.mode().iloc[0]
             }
 
         # Too few samples
         if len(y) < self.MIN_SAMPLES:
             return {
-                "leaf": y.mode()[0]
+                "leaf": y.mode().iloc[0]
             }
 
 
@@ -447,7 +435,7 @@ class ID3(Model):
         # No useful split
         if gains[best_feature] <= 0:
             return {
-                "leaf": y.mode()[0]
+                "leaf": y.mode().iloc[0]
             }
 
 

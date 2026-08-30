@@ -87,14 +87,14 @@ if __name__ == "__main__":
 
     X_test = test[features]
 
-    nn = NeuralNetwork()
+    id3 = ID3()
 
-    nn.train(
+    id3.train(
         X_train,
         y_train
     )
 
-    nn.create_submission(
+    id3.create_submission(
         X_test,
         test["PassengerId"],
         "submission.csv"
