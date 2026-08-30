@@ -43,3 +43,88 @@ for name in df["Name"]:
         titles[title] = 1
 
 print("Titles with their respective frequencies:\n", titles)
+
+
+================ K Folds ===================
+    '''
+    # K Fold for parameter tuning
+    kf = StratifiedKFold(
+        n_splits=5,
+        shuffle=True,
+        random_state=42
+    )
+
+    id3_scores = []
+    nn_scores = []
+
+    for fold, (train_idx, test_idx) in enumerate(kf.split(X, Y), start=1):
+
+        X_train = X.iloc[train_idx]
+        X_test = X.iloc[test_idx]
+
+        y_train = Y.iloc[train_idx]
+        y_test = Y.iloc[test_idx]
+
+
+        # Train and test models
+
+        ## Neural network
+        nn = NeuralNetwork()
+        nn.train(X_train, y_train, X_test, y_test)
+        nn_accuracy = nn.evaluate(
+            X_test,
+            y_test
+        )
+
+        nn_scores.append(nn_accuracy)
+
+
+        # Results
+
+        print(
+            f"Fold {fold}: "
+            f"Train = {nn.train_accuracies[-1] * 100:.2f}% | "
+            f"Validation = {nn.val_accuracies[-1] * 100:.2f}%"
+        )
+
+        if fold == 1:
+            plt.figure()
+
+            plt.plot(
+                range(1, nn.EPOCHS + 1),
+                nn.train_losses,
+                label="Train"
+            )
+
+            plt.plot(
+                range(1, nn.EPOCHS + 1),
+                nn.val_losses,
+                label="Validation"
+            )
+
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
+            plt.title("Training vs Validation Loss")
+
+            plt.legend()
+            plt.grid()
+
+            plt.show()
+
+
+    # Final results
+    best_epoch = np.argmin(nn.val_losses) + 1
+
+    print(
+        f"Best epoch: {best_epoch}"
+    )
+    print(
+        f"Best validation loss: "
+        f"{nn.val_losses[best_epoch - 1]:.4f}"
+    )
+
+    print(
+        f"NN medial accuracy:  "
+        f"{np.median(nn_scores):.2f}%"
+    )
+    '''
