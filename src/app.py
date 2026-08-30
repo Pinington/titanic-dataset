@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
-from sklearn.model_selection import KFold, StratifiedKFold
+from sklearn.model_selection import KFold, StratifiedKFold, train_test_split
 import pandas as pd
 import numpy as np
+from models import *
 
 '''
 This file groups data ETL as well as a main file to test models out with and 
@@ -60,30 +61,43 @@ df.loc[df["Age"].isna(), "Age"] = (
 
 ## 2.4 - Add family trip feature
 
-df["FamilyTrip"] = df["SibSp"] & df["Parch"]
+df["FamilyTrip"] = (
+    (df["SibSp"] + df["Parch"]) >= 1
+).astype(int)
 
 
 # 3 - Load and try models out
 if __name__ == "__main__":
+
     features = ["Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Embarked", "Title", "FamilyTrip"]
     target = "Survived"
 
     X = df[features]
     Y = df[target]
-    
-    kf = StratifiedKFold(
-        n_splits=5,
-        shuffle=True,
-        random_state=42
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        Y,
+        test_size=10,
+        random_state=42,
+        stratify=Y
     )
 
-    for train_idx, test_idx in kf.split(X, Y):
-        X_train = X.iloc[train_idx]
-        X_test = X.iloc[test_idx]
+    print(f"Training samples: {len(X_train)}")
+    print(f"Testing samples:  {len(X_test)}")
 
-        y_train = Y.iloc[train_idx]
-        y_test = Y.iloc[test_idx]
+    nn = NeuralNetwork()
 
-        # Train model
+    nn.train(
+        X_train,
+        y_train,
+        X_test,
+        y_test
+    )
 
-    print(df.head())
+    accuracy = nn.evaluate(
+        X_test,
+        y_test
+    )
+
+    print(f"NN test accuracy: {accuracy:.2f}%")
