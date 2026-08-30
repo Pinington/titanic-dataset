@@ -1,0 +1,45 @@
+Ideas for my notebook:
+
+go step by ste and visualize data,
+
+extraction + sample of data + total survival rate
+show missing data counts
+
+show names and titles then reduced title set + count
+
+plot survival by age / sex / SibSp / fare / title
+
+
+================= General info ================= 
+print(df.head())
+print()
+
+n = len(df["Survived"])
+print(f"Total dataset size: {n}\n")
+
+print("Missing features and respective frequenices:")
+print(f" Name: {n - df["Name"].notna().sum()} \n"
+        f" Pclass: {n - (df["Pclass"].notna().sum())} \n"
+        f" Sex: {n - (df["Sex"].notna().sum())} \n"
+        f" Age: {n - (df["Age"].notna().sum())} \n"
+        f" SibSp: {n - (df["SibSp"].notna().sum())} \n"
+        f" Ticket: {n - (df["Ticket"].notna().sum())} \n"
+        f" Fare: {n - (df["Fare"].notna().sum())} \n"
+        f" Cabin: {n - (df["Cabin"].notna().sum())} \n"
+        f" Embarked: {n - (df["Embarked"].notna().sum())} \n")
+
+
+=============== Titles and frequencies ==================
+titles = {}
+for name in df["Name"]:
+    # Cut the family name
+    stripped_string = name[name.find(", ") + 2:]
+
+    # Append the title
+    title = stripped_string[:stripped_string.find(" ")]
+    if title in titles:
+        titles[title] += 1
+    else:
+        titles[title] = 1
+
+print("Titles with their respective frequencies:\n", titles)
